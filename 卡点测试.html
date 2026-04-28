@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>三哥 · 诊断问卷</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Space+Mono:wght@400;700&display=swap');
+  * { margin:0; padding:0; box-sizing:border-box; }
+  :root {
+    --black:#080808; --gold:#C9A84C; --gdim:#6B5420;
+    --white:#EDE8DF; --muted:#777; --border:#222;
+    --green:#7A9E7E; --purple:#8B7BAB;
+  }
+  body { background:var(--black); color:var(--white); font-family:'Noto Serif SC',serif; min-height:100vh; display:flex; flex-direction:column; align-items:center; padding:40px 20px 60px; }
+  .hd-label { font-family:'Space Mono',monospace; font-size:9px; letter-spacing:5px; color:var(--gdim); text-transform:uppercase; text-align:center; margin-bottom:12px; }
+  .hd-title { font-size:22px; font-weight:700; text-align:center; margin-bottom:6px; letter-spacing:1px; }
+  .hd-sub { font-size:11px; color:var(--muted); font-family:'Space Mono',monospace; text-align:center; margin-bottom:36px; letter-spacing:1px; }
+  .progress-wrap { width:100%; max-width:520px; margin-bottom:28px; }
+  .progress-meta { display:flex; justify-content:space-between; font-family:'Space Mono',monospace; font-size:9px; color:#333; margin-bottom:6px; }
+  .progress-bar { height:2px; background:#1a1a1a; width:100%; }
+  .progress-fill { height:100%; background:var(--gold); transition:width 0.4s ease; }
+  .q-card { width:100%; max-width:520px; background:#0d0d0d; border:1px solid var(--border); padding:28px 28px 24px; display:none; }
+  .q-card.active { display:block; animation:fadeUp 0.3s ease; }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+  .q-num { font-family:'Space Mono',monospace; font-size:9px; color:var(--gdim); letter-spacing:3px; margin-bottom:14px; }
+  .q-text { font-size:15px; font-weight:600; line-height:1.7; color:var(--white); margin-bottom:22px; }
+  .options { display:flex; flex-direction:column; gap:10px; }
+  .opt { display:flex; align-items:flex-start; gap:12px; padding:12px 14px; border:1px solid #1c1c1c; background:#0a0a0a; cursor:pointer; transition:all 0.15s; text-align:left; }
+  .opt:hover { border-color:var(--gdim); background:#0f0f0a; }
+  .opt.selected-a { border-color:var(--gold); background:#100e04; }
+  .opt.selected-b { border-color:var(--green); background:#060d07; }
+  .opt.selected-c { border-color:var(--purple); background:#08060e; }
+  .opt-letter { font-family:'Space Mono',monospace; font-size:9px; color:#333; flex-shrink:0; margin-top:2px; width:14px; }
+  .opt.selected-a .opt-letter { color:var(--gold); }
+  .opt.selected-b .opt-letter { color:var(--green); }
+  .opt.selected-c .opt-letter { color:var(--purple); }
+  .opt-text { font-size:12.5px; color:#aaa; line-height:1.7; }
+  .opt:hover .opt-text,.opt.selected-a .opt-text,.opt.selected-b .opt-text,.opt.selected-c .opt-text { color:var(--white); }
+  #result { width:100%; max-width:520px; display:none; animation:fadeUp 0.4s ease; }
+  .result-badge { padding:32px 28px 28px; border:1px solid var(--border); background:#0d0d0d; margin-bottom:12px; }
+  .result-label { font-family:'Space Mono',monospace; font-size:9px; letter-spacing:4px; color:#444; margin-bottom:16px; text-transform:uppercase; text-align:center; }
+  .result-tier { font-family:'Space Mono',monospace; font-size:30px; font-weight:700; margin-bottom:6px; text-align:center; }
+  .result-name { font-size:16px; font-weight:600; margin-bottom:18px; text-align:center; }
+  .result-divider { width:40px; height:1px; background:var(--border); margin:0 auto 18px; }
+  .result-desc { font-size:12.5px; color:#aaa; line-height:2; white-space:pre-line; }
+  .result-quote { border-left:2px solid; padding:14px 16px; margin:18px 0 0; font-size:12px; color:#aaa; line-height:1.9; font-style:italic; background:#090909; }
+  .spread-mini { display:flex; justify-content:center; gap:5px; margin-top:20px; flex-wrap:wrap; }
+  .mini-slot { width:32px; height:46px; border-radius:3px; border:1px solid #1c1c1c; background:#0a0a0a; display:flex; align-items:center; justify-content:center; font-family:'Space Mono',monospace; font-size:7px; color:#2a2a2a; }
+  .mini-slot.lit-88  { border-color:var(--gold);   color:var(--gold);   background:#100e04; }
+  .mini-slot.lit-420 { border-color:var(--green);  color:var(--green);  background:#060d07; }
+  .mini-slot.lit-888 { border-color:var(--purple); color:var(--purple); background:#08060e; }
+  .tier-88 .result-tier,.tier-88 .result-name { color:var(--gold); }
+  .tier-88 .result-quote { border-color:var(--gdim); }
+  .tier-88 { border-color:var(--gdim) !important; }
+  .tier-420 .result-tier,.tier-420 .result-name { color:var(--green); }
+  .tier-420 .result-quote { border-color:#3D6642; }
+  .tier-420 { border-color:#3D6642 !important; }
+  .tier-888 .result-tier,.tier-888 .result-name { color:var(--purple); }
+  .tier-888 .result-quote { border-color:#4A3D6A; }
+  .tier-888 { border-color:#4A3D6A !important; }
+  .book-btn { width:100%; padding:16px; font-family:'Space Mono',monospace; font-size:11px; letter-spacing:3px; text-transform:uppercase; cursor:pointer; border:none; transition:all 0.2s; margin-bottom:10px; }
+  .book-btn-88  { background:var(--gold);   color:#080808; }
+  .book-btn-420 { background:var(--green);  color:#080808; }
+  .book-btn-888 { background:var(--purple); color:#f0eeff; }
+  .book-btn:hover { opacity:0.85; }
+  #booking-form { display:none; width:100%; max-width:520px; background:#0d0d0d; border:1px solid var(--border); padding:28px 28px 24px; margin-bottom:10px; animation:fadeUp 0.3s ease; }
+  #booking-form.open { display:block; }
+  .form-label { font-family:'Space Mono',monospace; font-size:9px; letter-spacing:4px; color:var(--gdim); text-transform:uppercase; margin-bottom:20px; text-align:center; }
+  .field-group { margin-bottom:14px; }
+  .field-label { font-family:'Space Mono',monospace; font-size:9px; color:#555; letter-spacing:2px; margin-bottom:6px; display:block; text-transform:uppercase; }
+  .field-input { width:100%; background:#0a0a0a; border:1px solid #222; color:var(--white); font-family:'Noto Serif SC',serif; font-size:13px; padding:12px 14px; outline:none; transition:border-color 0.15s; -webkit-appearance:none; border-radius:0; }
+  .field-input:focus { border-color:var(--gdim); }
+  .field-input::placeholder { color:#333; }
+  .submit-btn { width:100%; padding:14px; background:var(--gdim); color:var(--white); font-family:'Space Mono',monospace; font-size:10px; letter-spacing:3px; text-transform:uppercase; border:none; cursor:pointer; margin-top:6px; transition:background 0.2s; }
+  .submit-btn:hover { background:var(--gold); color:#080808; }
+  .form-note { font-size:10px; color:#333; text-align:center; margin-top:12px; font-family:'Space Mono',monospace; line-height:1.7; }
+  #thankyou { display:none; width:100%; max-width:520px; background:#0a0a08; border:1px solid var(--gdim); padding:36px 28px; text-align:center; animation:fadeUp 0.4s ease; margin-bottom:10px; }
+  .ty-icon { font-size:28px; margin-bottom:14px; }
+  .ty-title { font-size:16px; font-weight:700; color:var(--gold); margin-bottom:10px; }
+  .ty-text { font-size:12px; color:#aaa; line-height:1.9; }
+  .restart-btn { width:100%; max-width:520px; padding:12px; background:transparent; border:1px solid #222; color:#444; font-family:'Space Mono',monospace; font-size:10px; letter-spacing:3px; cursor:pointer; text-transform:uppercase; transition:all 0.2s; }
+  .restart-btn:hover { border-color:var(--gdim); color:var(--gdim); }
+  .page-footer { margin-top:40px; font-family:'Space Mono',monospace; font-size:9px; color:#222; letter-spacing:2px; text-align:center; }
+</style>
+</head>
+<body>
+
+<div class="hd-label">三哥 · 来访前诊断</div>
+<div class="hd-title">你现在的问题在哪一层？</div>
+<div class="hd-sub">5个问题 · 找到最适合你的诊断层级</div>
+
+<div class="progress-wrap">
+  <div class="progress-meta">
+    <span id="prog-text">问题 1 / 5</span>
+    <span id="prog-pct">20%</span>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="prog-fill" style="width:20%"></div></div>
+</div>
+
+<div id="questions">
+  <div class="q-card active" data-q="1">
+    <div class="q-num">Q 01 · 问题存在多久了？</div>
+    <div class="q-text">你今天想解决的这件事，它在你生活里出现多久了？</div>
+    <div class="options">
+      <div class="opt" data-score="a" onclick="selectOpt(this,1)"><span class="opt-letter">A</span><span class="opt-text">最近一两个月才出现，或是一个新的决策需要想清楚</span></div>
+      <div class="opt" data-score="b" onclick="selectOpt(this,1)"><span class="opt-letter">B</span><span class="opt-text">超过半年了，我试过一些方法但都没有真正解决</span></div>
+      <div class="opt" data-score="c" onclick="selectOpt(this,1)"><span class="opt-letter">C</span><span class="opt-text">不止一年，甚至感觉它一直都在，换了环境还是出现</span></div>
+    </div>
+  </div>
+  <div class="q-card" data-q="2">
+    <div class="q-num">Q 02 · 问题的层次</div>
+    <div class="q-text">你今天最想解决的，比较接近哪一种？</div>
+    <div class="options">
+      <div class="opt" data-score="a" onclick="selectOpt(this,2)"><span class="opt-letter">A</span><span class="opt-text">我知道方向，但我最近脑子乱、情绪状态不对、心态卡住了</span></div>
+      <div class="opt" data-score="b" onclick="selectOpt(this,2)"><span class="opt-letter">B</span><span class="opt-text">我有几个选项，我需要有人帮我整理清楚优先顺序和行动步骤</span></div>
+      <div class="opt" data-score="c" onclick="selectOpt(this,2)"><span class="opt-letter">C</span><span class="opt-text">我不确定自己走的方向对不对，整个生意模式或身份定位都需要重新检视</span></div>
+    </div>
+  </div>
+  <div class="q-card" data-q="3">
+    <div class="q-num">Q 03 · 代价评估</div>
+    <div class="q-text">如果这件事三个月后还没有解决，你的生意或生活会怎样？</div>
+    <div class="options">
+      <div class="opt" data-score="a" onclick="selectOpt(this,3)"><span class="opt-letter">A</span><span class="opt-text">表面上没大问题，但我已经在这个状态里消耗了不少时间和精力——这本身也是一种代价</span></div>
+      <div class="opt" data-score="b" onclick="selectOpt(this,3)"><span class="opt-letter">B</span><span class="opt-text">会有明显的收入或机会损失，几个重要的事情会卡死</span></div>
+      <div class="opt" data-score="c" onclick="selectOpt(this,3)"><span class="opt-letter">C</span><span class="opt-text">可能会出现比较严重的后果——财务、团队、或整个方向都可能崩</span></div>
+    </div>
+  </div>
+  <div class="q-card" data-q="4">
+    <div class="q-num">Q 04 · 过去的尝试</div>
+    <div class="q-text">你之前试过什么方法来解决这件事？</div>
+    <div class="options">
+      <div class="opt" data-score="a" onclick="selectOpt(this,4)"><span class="opt-letter">A</span><span class="opt-text">还没有真正认真处理过，只是感觉到卡住了</span></div>
+      <div class="opt" data-score="b" onclick="selectOpt(this,4)"><span class="opt-letter">B</span><span class="opt-text">试过几个方法，有些短期有效，但问题还是一直回来</span></div>
+      <div class="opt" data-score="c" onclick="selectOpt(this,4)"><span class="opt-letter">C</span><span class="opt-text">试了很多，包括找人谈过、读书、上课，但根本原因一直没找到</span></div>
+    </div>
+  </div>
+  <div class="q-card" data-q="5">
+    <div class="q-num">Q 05 · 你今天来的期待</div>
+    <div class="q-text">你今天来找我，最希望离开的时候带走什么？</div>
+    <div class="options">
+      <div class="opt" data-score="a" onclick="selectOpt(this,5)"><span class="opt-letter">A</span><span class="opt-text">看清楚自己现在卡在哪个心态，知道问题的名字是什么</span></div>
+      <div class="opt" data-score="b" onclick="selectOpt(this,5)"><span class="opt-letter">B</span><span class="opt-text">一份清单——知道接下来要做什么、不做什么、先做什么</span></div>
+      <div class="opt" data-score="c" onclick="selectOpt(this,5)"><span class="opt-letter">C</span><span class="opt-text">对自己的整个方向和身份有一个重新的清晰感，以及一个可以走的路</span></div>
+    </div>
+  </div>
+</div>
+
+<div id="result">
+  <div class="result-badge" id="result-badge">
+    <div class="result-label">你的诊断结果</div>
+    <div class="result-tier" id="res-tier"></div>
+    <div class="result-name" id="res-name"></div>
+    <div class="result-divider"></div>
+    <div class="result-desc" id="res-desc"></div>
+    <div class="result-quote" id="res-quote"></div>
+    <div class="spread-mini" id="res-spread"></div>
+  </div>
+  <button class="book-btn" id="book-btn" onclick="openBooking()">▸ 预约咨询</button>
+</div>
+
+<div id="booking-form">
+  <div class="form-label">预约信息</div>
+  <div class="field-group">
+    <label class="field-label">你的名字</label>
+    <input class="field-input" id="f-name" type="text" placeholder="请输入你的名字" />
+  </div>
+  <div class="field-group">
+    <label class="field-label">手机号码</label>
+    <input class="field-input" id="f-phone" type="tel" placeholder="请输入手机号码" />
+  </div>
+  <div class="field-group">
+    <label class="field-label">电子邮箱</label>
+    <input class="field-input" id="f-email" type="email" placeholder="请输入你的 Email（选填）" />
+  </div>
+  <button class="submit-btn" onclick="submitBooking()">确认预约 →</button>
+  <div class="form-note">三哥会在24小时内联系你确认时间</div>
+</div>
+
+<div id="thankyou">
+  <div class="ty-icon">✓</div>
+  <div class="ty-title">收到了。</div>
+  <div class="ty-text">你的诊断结果 <strong id="ty-tier" style="color:var(--gold)"></strong> 已一并发送给三哥。<br><br>三哥会在24小时内通过你留下的联系方式确认预约时间。<br><br>在那之前，你不需要做任何准备。</div>
+</div>
+
+<button class="restart-btn" id="restart-btn" style="display:none" onclick="restart()">↩ 重新作答</button>
+<div class="page-footer">三哥 · DECISION STRATEGY · 我不安慰你，我校准你</div>
+
+<script>
+const answers = {};
+let currentTier = 'a';
+
+const results = {
+  a: {
+    tier:'RM 88', name:'挑战心态诊断', cls:'tier-88', btnCls:'book-btn-88',
+    desc:'你不是不知道要做什么。你是有一个东西卡在那里，让你每次想动的时候都有一股说不清楚的阻力。你绕过它，它还在。你忽视它，它还在。\n\n这个东西不是懒，不是没决心，不是时机不对。它有一个具体的名字。找到那个名字，你才能真正处理它，而不是继续绕着它转。\n\n一张牌，10到15分钟。',
+    quote:'「状态不对的时候，所有方法都会失效。你现在需要的不是更多建议，是找到那个卡点叫什么。」',
+    slots:['lit-88','','','','','','','','','']
+  },
+  b: {
+    tier:'RM 420', name:'决策 Session', cls:'tier-420', btnCls:'book-btn-420',
+    desc:'你不是缺乏行动力。你是同时有太多事情压着，每一件看起来都重要，结果每一件都动不了，或者动了但感觉在原地打转。\n\n问题不是你不够努力。是你现在没有一个结构，帮你区分什么是真正的优先，什么是在消耗你但没有推进你。没有这个结构，你越努力，越乱。\n\n一个小时，5张牌，整理出你的地图。',
+    quote:'「你缺的不是动力，是一张清楚的地图——知道哪条路走得通，哪条路在浪费你的时间。」',
+    slots:['lit-420','lit-420','lit-420','lit-420','lit-420','','','','','']
+  },
+  c: {
+    tier:'RM 888', name:'深度决策校准', cls:'tier-888', btnCls:'book-btn-888',
+    desc:'你试过很多方法，有些短期有效，但问题一直回来。这不是因为你不够努力，是因为你一直在处理症状，没有找到根。\n\n你现在需要重新检视的，不只是下一步怎么走，而是你整个运作的底层逻辑——你怎么做决定，你怎么定义自己，你的生意结构里哪里有一个一直在漏水的洞。这些不是调整一下就能解决的。需要从根部开始查。\n\n90到120分钟，10张牌，从根部开始。',
+    quote:'「你现在的问题，不是策略问题。策略可以调整，但如果底层结构是错的，调整只是在延迟崩溃的时间。」',
+    slots:['lit-888','lit-888','lit-888','lit-888','lit-888','lit-888','lit-888','lit-888','lit-888','lit-888']
+  }
+};
+
+function selectOpt(el, qNum) {
+  el.closest('.q-card').querySelectorAll('.opt').forEach(o => o.classList.remove('selected-a','selected-b','selected-c'));
+  const score = el.dataset.score;
+  el.classList.add('selected-' + score);
+  answers[qNum] = score;
+  setTimeout(() => { if (qNum < 5) goTo(qNum + 1); else showResult(); }, 320);
+}
+
+function goTo(n) {
+  document.querySelectorAll('.q-card').forEach(c => c.classList.remove('active'));
+  document.querySelector('[data-q="' + n + '"]').classList.add('active');
+  const pct = Math.round((n / 5) * 100);
+  document.getElementById('prog-text').textContent = '问题 ' + n + ' / 5';
+  document.getElementById('prog-pct').textContent = pct + '%';
+  document.getElementById('prog-fill').style.width = pct + '%';
+}
+
+function showResult() {
+  const counts = {a:0,b:0,c:0};
+  Object.values(answers).forEach(v => counts[v]++);
+  let winner = 'a';
+  if (counts.c >= 2) winner = 'c';
+  else if (counts.b >= 2) winner = 'b';
+  if (answers[3] === 'c' || answers[5] === 'c') winner = 'c';
+  else if ((answers[3] === 'b' || answers[5] === 'b') && winner === 'a') winner = 'b';
+
+  currentTier = winner;
+  const r = results[winner];
+  const badge = document.getElementById('result-badge');
+  badge.className = 'result-badge ' + r.cls;
+  document.getElementById('res-tier').textContent = r.tier;
+  document.getElementById('res-name').textContent = r.name;
+  document.getElementById('res-desc').textContent = r.desc;
+  document.getElementById('res-quote').textContent = r.quote;
+
+  const spreadEl = document.getElementById('res-spread');
+  spreadEl.innerHTML = '';
+  const labels = ['01','02','03','04','05','06','07','08','09','10'];
+  r.slots.forEach((cls, i) => {
+    const div = document.createElement('div');
+    div.className = 'mini-slot ' + cls;
+    div.textContent = labels[i];
+    spreadEl.appendChild(div);
+  });
+
+  const btn = document.getElementById('book-btn');
+  btn.className = 'book-btn ' + r.btnCls;
+
+  document.getElementById('prog-text').textContent = '完成';
+  document.getElementById('prog-pct').textContent = '100%';
+  document.getElementById('prog-fill').style.width = '100%';
+  document.getElementById('questions').style.display = 'none';
+  document.getElementById('result').style.display = 'block';
+  document.getElementById('restart-btn').style.display = 'block';
+}
+
+function openBooking() {
+  const form = document.getElementById('booking-form');
+  form.classList.add('open');
+  document.getElementById('book-btn').style.display = 'none';
+  setTimeout(() => form.scrollIntoView({behavior:'smooth',block:'start'}), 100);
+}
+
+function submitBooking() {
+  const name  = document.getElementById('f-name').value.trim();
+  const phone = document.getElementById('f-phone').value.trim();
+  const email = document.getElementById('f-email').value.trim();
+  if (!name || !phone) { alert('请填写名字和手机号码'); return; }
+  const r = results[currentTier];
+  const SHEET_URL = 'https://script.google.com/macros/s/AKfycbzAhkwHStPnus5uWkSkHXj7Yz1a1ibnfGHd1mXfNcWJHP73JtA-p303_ZGm8xsYCJK-hQ/exec';
+  const form = new FormData();
+  form.append('name', name);
+  form.append('phone', phone);
+  form.append('email', email);
+  form.append('tier', r.tier);
+  form.append('tierName', r.name);
+  fetch(SHEET_URL, { method: 'POST', mode: 'no-cors', body: form }).catch(() => {});
+  document.getElementById('ty-tier').textContent = r.tier + ' · ' + r.name;
+  document.getElementById('booking-form').style.display = 'none';
+  document.getElementById('thankyou').style.display = 'block';
+  document.getElementById('thankyou').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function restart() {
+  Object.keys(answers).forEach(k => delete answers[k]);
+  document.querySelectorAll('.opt').forEach(o => o.classList.remove('selected-a','selected-b','selected-c'));
+  document.getElementById('result').style.display = 'none';
+  document.getElementById('booking-form').classList.remove('open');
+  document.getElementById('booking-form').style.display = '';
+  document.getElementById('thankyou').style.display = 'none';
+  document.getElementById('restart-btn').style.display = 'none';
+  document.getElementById('book-btn').style.display = 'block';
+  document.getElementById('questions').style.display = 'block';
+  document.getElementById('f-name').value = '';
+  document.getElementById('f-phone').value = '';
+  document.getElementById('f-email').value = '';
+  goTo(1);
+}
+</script>
+</body>
+</html>
